@@ -1,8 +1,8 @@
 ## START: Set by rpmautospec
-## (rpmautospec version 0.8.3)
+## (rpmautospec version 0.8.2)
 ## RPMAUTOSPEC: autorelease, autochangelog
 %define autorelease(e:s:pb:n) %{?-p:0.}%{lua:
-    release_number = 1;
+    release_number = 3;
     base_release_number = tonumber(rpm.expand("%{?-b*}%{!?-b:1}"));
     print(release_number + base_release_number - 1);
 }%{?-e:.%{-e*}}%{?-s:.%{-s*}}%{!?-n:%{?dist}}
@@ -11,7 +11,7 @@
 %bcond check 1
 
 Name:           python-uv-build
-Version:        0.10.12
+Version:        0.8.11
 Release:        %autorelease
 Summary:        The uv build backend
 
@@ -23,27 +23,31 @@ Summary:        The uv build backend
 #
 # Rust crates compiled into the executable contribute additional license terms.
 # To obtain the following list of licenses, build the package and note the
-# output of %%{cargo_license_summary}.
+# output of %%{cargo_license_summary}. This should automatically include the
+# licenses of the following bundled forks:
+#   - pubgrub/version-ranges, Source200, is MPL-2.0.
+#   - reqwest-middleware/reqwest-retry, Source300, is (MIT OR Apache-2.0).
 #
 # (Apache-2.0 OR MIT) AND BSD-3-Clause
-# (MIT OR Apache-2.0) AND Apache-2.0 AND CC0-1.0
 # (MIT OR Apache-2.0) AND Unicode-3.0
 # (MIT OR Apache-2.0) AND Unicode-DFS-2016
 # 0BSD
+# 0BSD OR MIT OR Apache-2.0
 # Apache-2.0
 # Apache-2.0 OR BSD-2-Clause
 # Apache-2.0 OR BSL-1.0
 # Apache-2.0 OR MIT
 # Apache-2.0 OR MIT OR Zlib
 # Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT
+# BSD-2-Clause OR Apache-2.0 OR MIT
 # MIT
 # MIT OR Apache-2.0
+# MIT OR Zlib OR Apache-2.0
 # MIT-0 OR Apache-2.0
 # MPL-2.0
 # Unicode-3.0
 # Unlicense OR MIT
 # Zlib
-# bzip2-1.0.6
 License:        %{shrink:
                 (Apache-2.0 OR MIT) AND
                 (Apache-2.0 OR BSD-2-Clause) AND
@@ -51,19 +55,19 @@ License:        %{shrink:
                 }
 %global extra_crate_licenses %{shrink:
                 0BSD AND
+                (0BSD OR MIT OR Apache-2.0) AND
                 Apache-2.0 AND
+                (Apache-2.0 OR BSD-2-Clause OR MIT) AND
                 (Apache-2.0 OR BSL-1.0) AND
                 (Apache-2.0 OR MIT OR Zlib) AND
                 (Apache-2.0 OR MIT-0) AND
                 (Apache-2.0 OR Apache-2.0 WITH LLVM-exception OR MIT) AND
                 BSD-3-Clause AND
-                CC0-1.0 AND
                 MIT AND
                 (MIT OR Unlicense) AND
                 Unicode-3.0 AND
                 Unicode-DFS-2016 AND
-                Zlib AND
-                bzip2-1.0.6
+                Zlib
                 }
 URL:            https://pypi.org/project/uv-build
 Source:         %{pypi_source uv_build}
@@ -82,6 +86,32 @@ Source:         %{pypi_source uv_build}
 # of this package with uv updates – there will likely be times when we want to
 # keep updating uv (primarily a developer tool) while holding uv-build
 # (primarily used for building packages) at an older version for compatibility.
+
+# For the foreseeable future, uv must use a fork of pubgrub (and the
+# version-ranges crate, which belongs to the same project), as explained in:
+#   Plans for eventually using published pubgrub?
+#   https://github.com/astral-sh/uv/issues/3794
+# We therefore bundle the fork as prescribed in
+#   https://docs.fedoraproject.org/en-US/packaging-guidelines/Rust/#_replacing_git_dependencies
+# Note that uv-build currently only uses version-ranges, not pubgrub.
+%global pubgrub_git https://github.com/astral-sh/pubgrub
+%global pubgrub_rev 06ec5a5f59ffaeb6cf5079c6cb184467da06c9db
+%global pubgrub_snapdate 20250523
+%global version_ranges_baseversion 0.1.1
+Source200:      %{pubgrub_git}/archive/%{pubgrub_rev}/pubgrub-%{pubgrub_rev}.tar.gz
+
+# Until “Report retry count on Ok results,”
+# https://github.com/TrueLayer/reqwest-middleware/pull/235, is reviewed,
+# merged, and released, uv must use a fork of reqwest-middleware/reqwest-retry
+# to support the changes in “Show retries for HTTP status code errors,”
+# https://github.com/astral-sh/uv/pull/13897. We therefore bundle the fork as
+# prescribed in
+#   https://docs.fedoraproject.org/en-US/packaging-guidelines/Rust/#_replacing_git_dependencies
+%global reqwest_middleware_git https://github.com/astral-sh/reqwest-middleware
+%global reqwest_middleware_rev ad8b9d332d1773fde8b4cd008486de5973e0a3f8
+%global reqwest_middleware_snapdate 20250607
+%global reqwest_retry_baseversion 0.7.0
+Source300:      %{reqwest_middleware_git}/archive/%{reqwest_middleware_rev}/reqwest-middleware-%{reqwest_middleware_rev}.tar.gz
 
 
 # https://fedoraproject.org/wiki/Changes/EncourageI686LeafRemoval
@@ -105,6 +135,16 @@ Summary:        %{summary}
 License:        %{license} AND %{extra_crate_licenses}
 # LICENSE.dependencies contains a full license breakdown
 
+# This is a fork of pubgrub/version-ranges; see the notes about Source200.
+%global pubgrub_snapinfo %{pubgrub_snapdate}git%{sub %{pubgrub_rev} 1 7}
+%global version_ranges_version %{version_ranges_baseversion}^%{pubgrub_snapinfo}
+Provides:       bundled(crate(version-ranges)) = %{version_ranges_version}
+# This is a fork of reqwest-middleware/reqwest-retry; see the notes about
+# Source300.
+%global reqwest_middleware_snapinfo %{reqwest_middleware_snapdate}git%{sub %{reqwest_middleware_rev} 1 7}
+%global reqwest_retry_version %{reqwest_retry_baseversion}^%{reqwest_middleware_snapinfo}
+Provides:       bundled(crate(reqwest-retry)) = %{reqwest_retry_version}
+
 # In https://github.com/astral-sh/uv/issues/5588#issuecomment-2257823242,
 # upstream writes “These have diverged significantly and the upstream versions
 # are only passively maintained, uv requires these custom versions and can't
@@ -123,7 +163,59 @@ Provides:       bundled(crate(pep508_rs)) = 0.7.0
 
 
 %prep
-%autosetup -n uv_build-%{version} -p1
+%autosetup -n uv_build-%{version} -N
+%autopatch -p1 -M99
+
+# Usage: git2path SELECTOR PATH
+# Replace a git dependency with a path dependency in Cargo.toml
+git2path() {
+  tomcli set Cargo.toml del "${1}.git"
+  tomcli set Cargo.toml del "${1}.rev"
+  tomcli set Cargo.toml str "${1}.path" "${2}"
+}
+
+# See comments above Source200:
+%setup -q -T -D -b 200 -n uv_build-%{version}
+pushd '../pubgrub-%{pubgrub_rev}/'
+%autopatch -p1 -m200 -M299
+popd
+ln -s '../../pubgrub-%{pubgrub_rev}/version-ranges' crates/version-ranges
+# Convert the symlinked LICENSE in version-ranges to a regular file, since we
+# will be removing top-level files from pubgrub.
+rm -v crates/version-ranges/LICENSE
+cp -p '../pubgrub-%{pubgrub_rev}/LICENSE' crates/version-ranges/
+# Prove that we do not use the pubgrub crate by removing everything except the
+# version-ranges subdirectory.
+find '../pubgrub-%{pubgrub_rev}/' -mindepth 1 -maxdepth 1 \
+    ! -name 'version-ranges' -execdir rm -rv '{}' '+'
+# Note that install does always dereference symlinks, which is what we want:
+install -t LICENSE.bundled/version-ranges -D -p -m 0644 \
+    crates/version-ranges/LICENSE
+git2path workspace.dependencies.version-ranges crates/version-ranges
+
+# See comments above Source300:
+%setup -q -T -D -b 300 -n uv_build-%{version}
+pushd '../reqwest-middleware-%{reqwest_middleware_rev}/reqwest-middleware'
+%autopatch -p1 -m300 -M399
+popd
+# Upstream has only modified reqwest-retry, so we may as well use the system
+# copy of reqwest-middleware.
+rm -rv '../reqwest-middleware-%{reqwest_middleware_rev}/reqwest-middleware'
+tomcli set Cargo.toml del 'workspace.dependencies.reqwest-middleware.git'
+tomcli set Cargo.toml del 'workspace.dependencies.reqwest-middleware.rev'
+tomcli set Cargo.toml str 'workspace.dependencies.reqwest-middleware.version' \
+    '0.4.2'
+tomcli set Cargo.toml del patch.crates-io.reqwest-middleware
+ln -s '../../reqwest-middleware-%{reqwest_middleware_rev}/reqwest-retry' \
+    crates/reqwest-retry
+git2path workspace.dependencies.reqwest-retry crates/reqwest-retry
+tomcli set Cargo.toml del patch.crates-io.reqwest-retry
+tomcli set crates/reqwest-retry/Cargo.toml del \
+    'dependencies.reqwest-middleware.path'
+install -t LICENSE.bundled/reqwest-retry -D -p -m 0644 \
+    crates/reqwest-retry/LICENSE*
+# We do not need the reqwest-tracing crate.
+rm -rv '../reqwest-middleware-%{reqwest_middleware_rev}/reqwest-tracing'
 
 # Collect license files of vendored dependencies in the main source archive
 install -t LICENSE.bundled/pep440_rs -D -p -m 0644 crates/uv-pep440/License-*
@@ -137,19 +229,6 @@ find -L . -type f -name Cargo.toml -print \
 # this intentionally, so this change makes sense to keep downstream-only.
 tomcli set pyproject.toml false tool.maturin.strip
 tomcli set Cargo.toml false profile.release.strip
-
-# Do not request static linking of anything (particularly, liblzma)
-tomcli set Cargo.toml lists delitem \
-    workspace.dependencies.xz2.features 'static'
-
-# We retain the following example even when there are currently no dependencies
-# that need to be adjusted.
-#
-# # foocrate
-# #   wanted: 0.2.0
-# #   currently packaged: 0.1.2
-# #   https://bugzilla.redhat.com/show_bug.cgi?id=1234567
-# tomcli set Cargo.toml str workspace.dependencies.foocrate.version 0.1.2
 
 %cargo_prep
 
@@ -195,177 +274,6 @@ skip="${skip-} --skip wheel::test::test_prepare_metadata"
 
 %changelog
 ## START: Generated by rpmautospec
-* Fri Mar 20 2026 Benjamin A. Beasley <code@musicinmybrain.net> - 0.10.12-1
-- Update to 0.10.12 (close RHBZ#2449338)
-
-* Tue Mar 17 2026 Benjamin A. Beasley <code@musicinmybrain.net> - 0.10.11-1
-- Update to 0.10.11 (close RHBZ#2448298)
-
-* Sun Mar 15 2026 Benjamin A. Beasley <code@musicinmybrain.net> - 0.10.10-1
-- Update to 0.10.10 (close RHBZ#2447539)
-
-* Sun Mar 08 2026 Benjamin A. Beasley <code@musicinmybrain.net> - 0.10.9-1
-- Update to 0.10.9 (close RHBZ#2445333)
-
-* Wed Mar 04 2026 Benjamin A. Beasley <code@musicinmybrain.net> - 0.10.8-1
-- Update to 0.10.8 (close RHBZ#2444234)
-
-* Fri Feb 27 2026 Benjamin A. Beasley <code@musicinmybrain.net> - 0.10.7-1
-- Update to 0.10.7 (close RHBZ#2443311)
-
-* Wed Feb 25 2026 Benjamin A. Beasley <code@musicinmybrain.net> - 0.10.6-1
-- Update to 0.10.6 (close RHBZ#2442128)
-
-* Wed Feb 25 2026 Benjamin A. Beasley <code@musicinmybrain.net> - 0.10.5-1
-- Update to 0.10.5
-
-* Wed Feb 18 2026 Benjamin A. Beasley <code@musicinmybrain.net> - 0.10.4-1
-- Update to 0.10.4 (close RHBZ#2440502)
-
-* Mon Feb 16 2026 Benjamin A. Beasley <code@musicinmybrain.net> - 0.10.3-1
-- Update to 0.10.3 (close RHBZ#2440200)
-
-* Tue Feb 10 2026 Benjamin A. Beasley <code@musicinmybrain.net> - 0.10.2-1
-- Update to 0.10.2
-
-* Tue Feb 10 2026 Benjamin A. Beasley <code@musicinmybrain.net> - 0.10.1-1
-- Update to 0.10.1 (close RHBZ#2438446)
-
-* Fri Feb 06 2026 Benjamin A. Beasley <code@musicinmybrain.net> - 0.10.0-1
-- Update to 0.10.0 (close RHBZ#2437187)
-
-* Thu Feb 05 2026 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.30-1
-- Update to 0.9.30 (close RHBZ#2436958)
-
-* Tue Feb 03 2026 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.29-1
-- Update to 0.9.29 (close RHBZ#2436549)
-
-* Thu Jan 29 2026 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.28-1
-- Update to 0.9.28 (close RHBZ#2433122)
-
-* Thu Jan 29 2026 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.27-1
-- Update to version 0.9.27
-
-* Sat Jan 17 2026 Fedora Release Engineering <releng@fedoraproject.org> - 0.9.26-2
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_44_Mass_Rebuild
-
-* Thu Jan 15 2026 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.26-1
-- Update to 0.9.26 (close RHBZ#2428321)
-
-* Tue Jan 06 2026 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.22-1
-- Update to 0.9.22 (close RHBZ#2427389)
-
-* Tue Dec 30 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.21-1
-- Update to 0.9.21 (close RHBZ#2425889)
-
-* Tue Dec 30 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.20-1
-- Update to 0.9.20 (close RHBZ#2425889)
-
-* Tue Dec 16 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.18-1
-- Update to 0.9.18 (close RHBZ#2422785)
-
-* Sun Dec 14 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.17-2
-- Update spdx to 0.13
-
-* Thu Dec 11 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.17-1
-- Update to 0.9.17
-
-* Thu Dec 11 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.16-1
-- Update to 0.9.16
-
-* Thu Dec 11 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.15-1
-- Update to 0.9.15
-
-* Thu Dec 11 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.14-1
-- Update to 0.9.14
-
-* Thu Dec 11 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.13-1
-- Update to 0.9.13
-
-* Thu Dec 11 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.12-1
-- Update to 0.9.12
-
-* Thu Dec 11 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.11-1
-- Update to 0.9.11
-
-* Thu Dec 11 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.10-1
-- Update to 0.9.10
-
-* Sat Nov 15 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.9-1
-- Update to 0.9.9 (close RHBZ#2414659)
-
-* Fri Nov 07 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.8-1
-- Update to 0.9.8 (close RHBZ#2413460)
-
-* Sun Nov 02 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.7-2
-- Allow spdx 0.12
-
-* Fri Oct 31 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.7-1
-- Update to 0.9.7 (close RHBZ#2408519)
-
-* Wed Oct 29 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.6-1
-- Update to 0.9.6 (close RHBZ#2407236)
-
-* Fri Oct 24 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.5-1
-- Update to 0.9.5 (close RHBZ#2402881)
-
-* Fri Oct 24 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.4-1
-- Update to 0.9.4
-
-* Thu Oct 23 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.3-1
-- Update to 0.9.3
-
-* Thu Oct 23 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.2-1
-- Update to 0.9.2
-
-* Thu Oct 23 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.1-1
-- Update to 0.9.1
-
-* Thu Oct 23 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.9.0-1
-- Update to 0.9.0
-
-* Wed Oct 22 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.8.24-1
-- Update to 0.8.24
-
-* Wed Oct 22 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.8.23-1
-- Update to 0.8.23
-
-* Wed Oct 22 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.8.22-1
-- Update to 0.8.22
-
-* Wed Oct 22 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.8.21-1
-- Update to 0.8.21
-
-* Mon Sep 29 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.8.20-1
-- Update to 0.8.20 (close RHBZ#2389312)
-
-* Mon Sep 29 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.8.19-1
-- Update to 0.8.19
-
-* Mon Sep 29 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.8.18-1
-- Update to 0.8.18
-
-* Sun Sep 28 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.8.17-1
-- Update to 0.8.17
-
-* Sun Sep 28 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.8.16-1
-- Update to 0.8.16
-
-* Sun Sep 28 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.8.15-1
-- Update to 0.8.15
-
-* Sun Sep 28 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.8.14-1
-- Update to 0.8.14
-
-* Sun Sep 28 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.8.13-1
-- Update to 0.8.13
-
-* Sun Sep 28 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.8.12-1
-- Update to 0.8.12
-
-* Sun Sep 28 2025 Benjamin A. Beasley <code@musicinmybrain.net> - 0.8.11-4
-- Use the bundled reqwest-middleware, too
-
 * Fri Sep 19 2025 Python Maint <python-maint@redhat.com> - 0.8.11-3
 - Rebuilt for Python 3.14.0rc3 bytecode
 

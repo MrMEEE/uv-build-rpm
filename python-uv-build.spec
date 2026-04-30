@@ -83,7 +83,6 @@ Source:         %{pypi_source uv_build}
 # keep updating uv (primarily a developer tool) while holding uv-build
 # (primarily used for building packages) at an older version for compatibility.
 
-BuildOption(install):   -l uv_build
 
 # https://fedoraproject.org/wiki/Changes/EncourageI686LeafRemoval
 # Also, there are a couple of test failures on 32-bit platforms.

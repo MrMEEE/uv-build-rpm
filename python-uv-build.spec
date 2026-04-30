@@ -27,7 +27,8 @@ Summary:        %{summary}
 
 
 %prep
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup-init.sh
+sh rustup-init.sh -y
 %autosetup -p1 -n uv_build-%{version}
 
 

@@ -92,7 +92,7 @@ ExcludeArch:   %{ix86}
 
 BuildRequires:  tomcli
 #BuildRequires:  cargo-rpm-macros >= 24
-#BuildRequires:  rust2rpm-helper
+BuildRequires:  rust2rpm-helper
 
 %global common_description %{expand:
 This package is a slimmed down version of uv containing only the build

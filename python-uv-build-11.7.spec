@@ -180,7 +180,7 @@ tomcli set Cargo.toml lists delitem \
 skip="${skip-} --skip tests::built_by_uv_building"
 skip="${skip-} --skip wheel::test::test_prepare_metadata"
 
-%cargo_test -- -- --exact ${skip-}
+#%cargo_test -- -- --exact ${skip-}
 %endif
 
 

@@ -165,12 +165,12 @@ tomcli set Cargo.toml lists delitem \
 #
 # Since maturin always checks for dev-dependencies, we need -t so that they are
 # generated even when the “check” bcond is disabled.
-%cargo_generate_buildrequires -a -t
+#%cargo_generate_buildrequires -a -t
 
 
 %build -p
-%cargo_license_summary
-%{cargo_license} > LICENSE.dependencies
+#%cargo_license_summary
+#%{cargo_license} > LICENSE.dependencies
 
 
 %check -a

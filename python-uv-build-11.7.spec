@@ -184,7 +184,7 @@ skip="${skip-} --skip wheel::test::test_prepare_metadata"
 %endif
 
 
-%files -n python3-uv-build -f %{pyproject_files}
+%files -n python3-uv-build 
 # The other license files (LICENSE-APACHE, LICENSE-MIT, and
 # LICENSE.dependencies) are already handled in the .dist-info directory.
 %license LICENSE.bundled/

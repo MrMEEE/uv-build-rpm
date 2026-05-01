@@ -126,6 +126,8 @@ Provides:       bundled(crate(pep508_rs)) = 0.7.0
 
 %prep
 %autosetup -n uv_build-%{version} -p1
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup.sh
+sh rustup.sh -y
 
 # Collect license files of vendored dependencies in the main source archive
 install -t LICENSE.bundled/pep440_rs -D -p -m 0644 crates/uv-pep440/License-*

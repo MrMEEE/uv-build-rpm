@@ -190,7 +190,7 @@ skip="${skip-} --skip wheel::test::test_prepare_metadata"
 %license LICENSE.bundled/
 %doc README.md
 
-%{_bindir}/uv-build
+#%{_bindir}/uv-build
 # Output of uv-build --help:
 #   uv_build contains only the PEP 517 build backend for uv and can't be used
 #   on the CLI. Use `uv build` or another build frontend instead.

@@ -155,7 +155,7 @@ tomcli set Cargo.toml lists delitem \
 # #   https://bugzilla.redhat.com/show_bug.cgi?id=1234567
 # tomcli set Cargo.toml str workspace.dependencies.foocrate.version 0.1.2
 
-%cargo_prep
+#%cargo_prep
 
 
 %generate_buildrequires -p
